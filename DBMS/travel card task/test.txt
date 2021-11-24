@@ -1,0 +1,11 @@
+M V
+A M
+V Y
+* 1 0 2
+H R
+R Y
+Y L
+K H
+* 3 0 1 2
+L P
+* 0

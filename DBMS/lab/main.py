@@ -91,8 +91,7 @@ class Server(object):
         self.app.add_url_rule('/payment', 'payment', self.payment_insert, methods=['POST'])
         self.app.add_url_rule('/flat/all', 'all_flat', self.flat_select, methods=['GET'])
 
-
-def __del__(self):
+    def __del__(self):
         self.db.close()
 
 '''

@@ -14,7 +14,8 @@ def charge_insert(connection, flat, amount):
 def payment_insert(connection, flat, year, month, day, amount):
 
     insert_query = f'''insert into payments (id_flat, amount, payment_date) 
-                            value((select id from flat where num = {str(flat)}), {str(amount)}, '{year}-{month}-{day}')'''
+                            value((select id from flat where num = {str(flat)}), {str(amount)}, 
+                            '{year}-{month}-{day}')'''
 
     with connection.cursor() as cursor:
         cursor.execute(insert_query)

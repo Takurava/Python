@@ -6,9 +6,12 @@ class Address:
         self.segment = segment_id
         self.addr = addr
 
+    def __str__(self):
+        return f'Segment - {self.segment}, addr - {self.addr}'
+
 
 class MemBlock:
-    def __init__(self, segment_id, addr, loc_size, is_free):
+    def __init__(self, segment_id, addr, loc_size, is_free=True):
         self.address = Address(segment_id, addr)
         self.loc_size = loc_size
         self.is_free = is_free
@@ -37,22 +40,22 @@ class MemAlloc:
             # Try to find memory place in each segments
             for i in range(len(self.segments)):
 
-                prev_addr = (0, 0)
+                prev_addr = MemBlock(i, 0, 0)
                 # For each memory block in segment
                 for new_mem_block in self.mem_block_address[i]:
 
                     # If between new block start and previous alloc block end exists loc_size
-                    if (new_mem_block.address.addr - (prev_addr[0] + prev_addr[1])) >= loc_size:
+                    if (new_mem_block.address.addr - (prev_addr.address.addr + prev_addr.loc_size)) >= loc_size:
                         # Return addr for insert block
-                        return i, prev_addr[0] + prev_addr[1]
+                        return i, prev_addr.address.addr + prev_addr.loc_size
                     # Else change previous alloc block if new is alloc too
                     elif not new_mem_block.is_free:
-                        prev_addr = (new_mem_block.address.addr, new_mem_block.loc_size)
+                        prev_addr = MemBlock(i, new_mem_block.address.addr, new_mem_block.loc_size)
 
                 # If between last alloc block end end of segment exists loc_size
-                if (self.segment_size - (prev_addr[0] + prev_addr[1])) >= loc_size:
+                if (self.segment_size - (prev_addr.address.addr + prev_addr.loc_size)) >= loc_size:
                     # Return addr for insert block
-                    return i, prev_addr[0] + prev_addr[1]
+                    return i, prev_addr.address.addr + prev_addr.loc_size
 
             # Create new segment if cant find
             segment_id = len(self.segments)
@@ -90,6 +93,7 @@ class MemAlloc:
 
     # Try to alloc memory
     def alloc(self, loc_size):
+        Log.save(f'Try to alloc memory, Loc size = {loc_size}')
 
         try:
             # addr, prev_addr = self.find_mem(loc_size)
@@ -99,11 +103,16 @@ class MemAlloc:
             for segment_address in self.mem_block_address:
                 segment_address.sort(key=lambda item: item.address.addr)
 
-            return segment_id, addr
+            return Address(segment_id, addr)
         except Exception as ex:
             print(ex)
 
-    def free(self, segment_id, addr):
+    def free(self, address):
+        Log.save(f'Try to free memory, Address = ({address})')
+
+        segment_id = address.segment
+        addr = address.addr
+
         for i in range(len(self.mem_block_address[segment_id])):
 
             if self.mem_block_address[segment_id][i].address.addr == addr:
@@ -129,6 +138,8 @@ class MemAlloc:
 
     def allocated(self):
         return f'Allocated: {self.segment_size * len(self.segments)} byte(s)'
+
+
 '''
     def mem_block_info(self):
         return '''

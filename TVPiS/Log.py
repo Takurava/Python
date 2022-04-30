@@ -1,10 +1,9 @@
-from datetime import datetime
+import datetime
 
 
-class Log:
-    now = datetime.now()
+now = datetime.datetime.now()
 
-    @staticmethod
-    def save(text):
-        with open(f'{str(Log.now)}', 'a') as log_file:
-            log_file.write(text)
+
+def save(text):
+    with open(f'logs\\{now.strftime("%Y-%m-%d_%H-%M-%S")}.txt', 'a') as log_file:
+        log_file.write(f'{text}\n')

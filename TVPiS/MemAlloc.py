@@ -1,98 +1,163 @@
-class MemBlock:
-    def __init__(self, addr, loc_size, is_free, prev_addr):
+import Log
+
+
+class Address:
+    def __init__(self, segment_id, addr):
+        self.segment = segment_id
         self.addr = addr
+
+
+class MemBlock:
+    def __init__(self, segment_id, addr, loc_size, is_free):
+        self.address = Address(segment_id, addr)
         self.loc_size = loc_size
         self.is_free = is_free
-        self.prev_addr = prev_addr
 
     def __str__(self):
-        return f'({self.addr}, {self.loc_size}, {self.is_free}, {self.prev_addr})'
+        return f'({self.address.segment}, {self.address.addr}, {self.loc_size}, {self.is_free})'  # , {self.prev_addr})'
 
 
 class MemAlloc:
-    def __init__(self, arr_size):
+    def __init__(self, segment_size):
         """Constructor"""
-        self.arr = [bytes(1) for _i in range(arr_size)]
-        self.address = [MemBlock(0, arr_size, True, 0)]
+        self.segment_size = segment_size
+        self.segments = [[bytes(1) for _i in range(segment_size)]]
+        self.mem_block_address = [[MemBlock(0, 0, segment_size, True)]]  # , 0)]
 
     def __str__(self):
-        return f'Lock: {str(self.allocated())}\n'+ str([str(item) for item in self.address])
+        return f'{self.allocated()}\n' + str([str(block) for segment in self.mem_block_address for block in segment])
 
+    # Find memory place for block of loc_size
     def find_mem(self, loc_size):
 
-        prev_addr = (0, 0)
-        for new_mem_block in self.address:
-            if (new_mem_block.addr - (prev_addr[0] + prev_addr[1])) >= loc_size:
-                prev_addr = (new_mem_block.addr, new_mem_block.loc_size)
-                break
-            elif not new_mem_block.is_free:
-                prev_addr = (new_mem_block.addr, new_mem_block.loc_size)
-
-        if (prev_addr[0] + prev_addr[1] + loc_size - 1) >= len(self.arr):
+        if loc_size > self.segment_size:
             raise NameError(f'Too much! Loc size = {loc_size}')
         else:
-            return prev_addr[0] + prev_addr[1], prev_addr[0]
 
-    def create_segment(self, addr, loc_size, prev_addr):
-        for i in range(len(self.address)):
-            if self.address[i].addr + self.address[i].loc_size > addr:
+            # Try to find memory place in each segments
+            for i in range(len(self.segments)):
+
+                prev_addr = (0, 0)
+                # For each memory block in segment
+                for new_mem_block in self.mem_block_address[i]:
+
+                    # If between new block start and previous alloc block end exists loc_size
+                    if (new_mem_block.address.addr - (prev_addr[0] + prev_addr[1])) >= loc_size:
+                        # Return addr for insert block
+                        return i, prev_addr[0] + prev_addr[1]
+                    # Else change previous alloc block if new is alloc too
+                    elif not new_mem_block.is_free:
+                        prev_addr = (new_mem_block.address.addr, new_mem_block.loc_size)
+
+                # If between last alloc block end end of segment exists loc_size
+                if (self.segment_size - (prev_addr[0] + prev_addr[1])) >= loc_size:
+                    # Return addr for insert block
+                    return i, prev_addr[0] + prev_addr[1]
+
+            # Create new segment if cant find
+            segment_id = len(self.segments)
+            self.segments.append([bytes(1) for _i in range(self.segment_size)])
+            self.mem_block_address.append([MemBlock(segment_id, 0, self.segment_size, True)])
+            return segment_id, 0
+
+    # Create lock (and free) block(s) in memory
+    def create_segment(self, segment_id, addr, loc_size):
+
+        # For each memory block in segment
+        for i in range(len(self.mem_block_address[segment_id])):
+
+            new_mem_block = self.mem_block_address[segment_id][i]
+            # If new memory block finished in or after inserted block
+            if new_mem_block.address.addr + new_mem_block.loc_size > addr:
 
                 end_of_last_del_mem_block = 0
-                while (i < len(self.address)) and (self.address[i].addr < addr + loc_size):
-                    end_of_last_del_mem_block = self.address[i].addr + self.address[i].loc_size
-                    del self.address[i]
 
-                self.address.append(MemBlock(addr, loc_size, False, prev_addr))
-                if addr + loc_size - 1 < end_of_last_del_mem_block:
+                # While segment already have other memory block and other block started in inserted block
+                while (i < len(self.mem_block_address[segment_id])) \
+                        and (self.mem_block_address[segment_id][i].address.addr < addr + loc_size):
+                    end_of_last_del_mem_block = self.mem_block_address[segment_id][i].address.addr \
+                                                + self.mem_block_address[segment_id][i].loc_size
+                    # Delete other memory block
+                    del self.mem_block_address[segment_id][i]
+
+                # Create new memory block
+                self.mem_block_address[segment_id].append(MemBlock(segment_id, addr, loc_size, False))
+                # Create little free memory block
+                if addr + loc_size < end_of_last_del_mem_block:
                     free_addr = addr + loc_size
-                    free_loc_size = end_of_last_del_mem_block - free_addr + 1
-                    self.address.append(MemBlock(free_addr, free_loc_size, True, addr))
+                    free_loc_size = end_of_last_del_mem_block - free_addr
+                    self.mem_block_address[segment_id].append(MemBlock(segment_id, free_addr, free_loc_size, True))
 
+    # Try to alloc memory
     def alloc(self, loc_size):
 
         try:
-            addr, prev_addr = self.find_mem(loc_size)
-            self.create_segment(addr, loc_size, prev_addr)
+            # addr, prev_addr = self.find_mem(loc_size)
+            segment_id, addr = self.find_mem(loc_size)
+            self.create_segment(segment_id, addr, loc_size)  # , prev_addr)
 
-            self.address.sort(key=lambda item: item.addr)
+            for segment_address in self.mem_block_address:
+                segment_address.sort(key=lambda item: item.address.addr)
 
-            return addr
+            return segment_id, addr
         except Exception as ex:
             print(ex)
 
-    def free(self, addr):
-        for i in range(len(self.address)):
-            if self.address[i].addr == addr:
-                self.address[i].is_free = True
+    def free(self, segment_id, addr):
+        for i in range(len(self.mem_block_address[segment_id])):
+
+            if self.mem_block_address[segment_id][i].address.addr == addr:
+
+                my_i = i
+                my_addr = addr
+                my_lock_size = self.mem_block_address[segment_id][i].loc_size
+
+                if i < len(self.mem_block_address[segment_id]) - 1 and self.mem_block_address[segment_id][i+1].is_free:
+                    my_lock_size = my_lock_size + self.mem_block_address[segment_id][i+1].loc_size
+                    del self.mem_block_address[segment_id][i+1]
+
+                if i > 0 and self.mem_block_address[segment_id][i-1].is_free:
+                    my_addr = self.mem_block_address[segment_id][i-1].address.addr
+                    my_lock_size = my_lock_size + self.mem_block_address[segment_id][i-1].loc_size
+                    del self.mem_block_address[segment_id][i-1]
+                    my_i = my_i - 1
+
+                self.mem_block_address[segment_id][my_i].address.addr = my_addr
+                self.mem_block_address[segment_id][my_i].loc_size = my_lock_size
+                self.mem_block_address[segment_id][my_i].is_free = True
                 break
 
     def allocated(self):
-        return sum([block.loc_size if not block.is_free else 0 for block in self.address])
+        return f'Allocated: {self.segment_size * len(self.segments)} byte(s)'
+'''
+    def mem_block_info(self):
+        return '''
 
 
+'''
+global memAlloc
 memAlloc = MemAlloc(1024)
 print(memAlloc)
 
-memAlloc.alloc(4)
-memAlloc.alloc(2)
-memAlloc.alloc(6)
-memAlloc.alloc(1)
-memAlloc.alloc(8)
+m1 = memAlloc.alloc(4)
+m2 = memAlloc.alloc(2)
+m3 = memAlloc.alloc(6)
+m4 = memAlloc.alloc(1)
+m5 = memAlloc.alloc(8)
 print(memAlloc)
 
-memAlloc.free(4)
-memAlloc.free(12)
+memAlloc.free(m2[0], m2[1])
+memAlloc.free(m4[0], m4[1])
 print(memAlloc)
 
-memAlloc.free(6)
+memAlloc.free(m3[0], m3[1])
 print(memAlloc)
 
-memAlloc.alloc(1000)
+memAlloc.alloc(1025)
 print(memAlloc)
 
-memAlloc.alloc(14)
+memAlloc.alloc(512)
+memAlloc.alloc(512)
+memAlloc.alloc(512)
 print(memAlloc)
-
-memAlloc.alloc(7)
-memAlloc.alloc(7)
-print(memAlloc)
+'''

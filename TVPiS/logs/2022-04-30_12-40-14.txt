@@ -1,0 +1,24 @@
+Try to push to stack, Element = (b'o')
+Try to alloc memory, Loc size = 1
+Try to push to stack, Element = (b't')
+Try to alloc memory, Loc size = 1
+Try to push to stack, Element = (b'f')
+Try to alloc memory, Loc size = 1
+Try to push to queue, Element = (b'se')
+Try to alloc memory, Loc size = 2
+Try to push to queue, Element = (b'nr')
+Try to alloc memory, Loc size = 2
+Try to push to queue, Element = (b'pm')
+Try to alloc memory, Loc size = 2
+Try to pop from stack
+Try to pop from queue
+Try to push front to deque, Element = (b'fuck')
+Try to alloc memory, Loc size = 4
+Try to push front to deque, Element = (b'duck')
+Try to alloc memory, Loc size = 4
+Try to push back to deque, Element = (b'suck')
+Try to alloc memory, Loc size = 4
+Try to pop front from deque
+Try to pop back from deque
+Try to pop back from deque
+Try to pop front from deque

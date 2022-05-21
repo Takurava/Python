@@ -1,0 +1,6 @@
+Try to alloc memory, Loc size = 1
+Try to alloc memory, Loc size = 2
+Try to alloc memory, Loc size = 2
+Try to alloc memory, Loc size = 2
+Try to alloc memory, Loc size = 1
+Try to alloc memory, Loc size = 1

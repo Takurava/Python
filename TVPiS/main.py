@@ -1,55 +1,30 @@
 from MemAlloc import MemAlloc
-from Stack import Stack
-from Stack import Queue
-from Stack import Deque
+from Hash import Hash
 
 
 memAlloc = MemAlloc(1024)
 print(memAlloc)
 
-s1 = Stack(memAlloc, 1)
-q1 = Queue(memAlloc, 2)
-d1 = Deque(memAlloc, 4)
+h = Hash(memAlloc)
 
-s1.push(bytes('o', 'utf8'))
-s1.push(bytes('t', 'utf8'))
-s1.push(bytes('f', 'utf8'))
-q1.push(bytes('se', 'utf8'))
-q1.push(bytes('nr', 'utf8'))
-q1.push(bytes('pm', 'utf8'))
+h.update('me', bytes('o', 'utf8'))
+print(h)
 print(memAlloc)
-print(s1)
-print(q1)
+print(h.get('me'))
 
-print(s1.pop())
-print(memAlloc)
-print(s1)
+h.update('me', bytes('oo', 'utf8'))
+h.update('he', bytes('vt', 'utf8'))
+h.update('ie', bytes('hy', 'utf8'))
+h.update('pe', bytes('q', 'utf8'))
+h.update('ee', bytes('p', 'utf8'))
+h.update('he', bytes('visio', 'utf8'))
 
-print(q1.pop())
+print(h)
 print(memAlloc)
-print(q1)
-
-d1.push_front(bytes('fuck', 'utf8'))
-d1.push_front(bytes('duck', 'utf8'))
-d1.push_back(bytes('suck', 'utf8'))
-print(memAlloc)
-print(d1)
-
-print(d1.pop_front())
-print(memAlloc)
-print(d1)
-
-print(d1.pop_back())
-print(memAlloc)
-print(d1)
-
-print(d1.pop_back())
-print(memAlloc)
-print(d1)
+print(h.get('me'))
+print(h.get_guts())
 
 try:
-    print(d1.pop_front())
+    print(h.get('pp'))
 except Exception as ex:
     print(ex)
-print(memAlloc)
-print(d1)

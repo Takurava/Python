@@ -14,12 +14,3 @@
 <expression>  ::= <number> | <identifier> | <call> | <expression> {(+|-|*|/) <expression>}
 <identifier>  ::= r'[\w]+'
 <number>      ::= r'[\d]+'
-
-
-obj = Tree('<module>')
-
-is_find, find_obj
-
-obj.add_leafs(find_obj)
-
-# is_find = self.try_find

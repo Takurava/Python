@@ -1,0 +1,25 @@
+<module>      ::= {<function>}*
+<type>        ::= 'int'
+<function>    ::= <type> <identifier> '(' <argument> {, <argument>}* ')' <block>
+<argument>    ::= <type> <identifier>
+<statement>   ::= <declaration> | <assign> | <if-else> | <while> | <jump> | <call>
+<declaration> ::= <type> <identifier> {','<identifier>}* ';'
+<block>       ::= '{' {<statement>}* '}'
+<call>        ::= <identifier> '(' {<expression>} {, expression}* ')'
+<if-else>     ::= 'if' '(' <condition> ')' <statement> { 'else' <statement> }
+<while>       ::= 'while' '(' <condition> ')' <statement>
+<jump>        ::= 'return' <expression> ';' | 'break' ';'
+<assign>      ::= <identifier> = <expression> ';'
+<condition>   ::= <expression> {( == | != | > | >= | < | <= ) <expression>}
+<expression>  ::= <number> | <identifier> | <call> | <expression> {(+|-|*|/) <expression>}
+<identifier>  ::= r'[\w]+'
+<number>      ::= r'[\d]+'
+
+
+obj = Tree('<module>')
+
+is_find, find_obj
+
+obj.add_leafs(find_obj)
+
+# is_find = self.try_find

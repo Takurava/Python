@@ -1,0 +1,5 @@
+def void main ( int a )
+{
+    int r ;
+    let r = 5 + 4 * ( 6 - 9 ) ;
+}

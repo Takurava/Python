@@ -11,6 +11,7 @@ h.update('me', bytes('o', 'utf8'))
 print(h)
 print(memAlloc)
 print(h.get('me'))
+print(h.get_guts())
 
 h.update('me', bytes('oo', 'utf8'))
 h.update('he', bytes('vt', 'utf8'))

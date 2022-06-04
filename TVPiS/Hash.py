@@ -75,8 +75,8 @@ class Hash:
                 result.append(f'{key}: {str(el_address)}')
         return str(result)
 
-'''
-memAlloc = MemAlloc(1024)
+
+'''memAlloc = MemAlloc.MemAlloc(1024)
 print(memAlloc)
 
 h = Hash(memAlloc)
@@ -103,4 +103,5 @@ try:
     print(h.get('pp'))
 except Exception as ex:
     print(ex)
+
 '''

@@ -1,5 +1,10 @@
-def void main ( int a )
+def int main ( )
 {
-    int r ;
-    let r = 5 + 4 * ( 6 - 9 ) ;
+    float r ;
+    scan ( r ) ;
+    float pi ;
+    let pi = 3.14159 ;
+    float S ;
+    let S = pi * r * r ;
+    print ( S ) ;
 }

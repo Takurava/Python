@@ -1,6 +1,7 @@
 import re
 import MemAlloc
 import Hash
+import Log
 from functools import reduce
 
 
@@ -96,6 +97,7 @@ def create_lexem(memAllock, h):
                         else:
                             h.update(word,  bytes(str(identifier_id), 'utf8'))
                             word_id = str(identifier_id)
+                            Log.save(f'{word} is {identifier_id}')
                             identifier_id = identifier_id + 1
                     lex.append(Lexem('var', word_id))
                 else:

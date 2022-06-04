@@ -2,6 +2,7 @@ import re
 import MemAlloc
 import Hash
 import Lexem
+import Log
 from functools import reduce
 
 
@@ -56,7 +57,9 @@ class Tree:
                 if function.leafs[1].me == func_name:
                     func = function
             result = func.run(args=args)
-            return result
+            for desc in identifiers_desc:
+                Log.save(f'{desc[0]} {desc[1].me} {get_mem(self.memAllock, desc[2])}')
+            return
         elif gram_name == '<function>':
             result = None
             try:

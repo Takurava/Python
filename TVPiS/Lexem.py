@@ -30,9 +30,11 @@ class IterationTokenizer:
 
 class Lexem:
 
-    def __init__(self, my_type, me):
+    def __init__(self, my_type, me, line=-1, num=-1):
         self.type = my_type
         self.me = me
+        self.line = line
+        self.num = num
         # self.ident_dic = {}
 
     def __str__(self):
@@ -40,7 +42,7 @@ class Lexem:
 
 
 
-def create_lexem(memAllock, h):
+def create_lexem(memAllock):
     rezerv = {'return': 'return',
               'print': 'print',
               'float': 'float',
@@ -77,29 +79,18 @@ def create_lexem(memAllock, h):
     lex = []
 
     import re
-    identifier = r'^\w[\w\d]*$'
+    identifier = r'^[a-zA-Z][\w\d]*$'
     number = r'^[\d]+$|^[\d]+\.[\d]+$'
-    identifier_id = 1
 
-    for line in it:
-        for word in line:
+    for i_line, line in enumerate(it):
+        for i_word, word in enumerate(line):
             try:
-                lex.append(Lexem(rezerv[word], word))
+                lex.append(Lexem(rezerv[word], word, i_line + 1, i_word + 1))
             except KeyError as e:
                 if re.match(number, word) is not None:
-                    lex.append(Lexem('num', word))
+                    lex.append(Lexem('num', word, i_line + 1, i_word + 1))
                 elif re.match(identifier, word) is not None:
-                    try:
-                        word_id = "".join(map(chr, h.get(word)))
-                    except Exception as e:
-                        if word == 'main':
-                            word_id = 'main'
-                        else:
-                            h.update(word,  bytes(str(identifier_id), 'utf8'))
-                            word_id = str(identifier_id)
-                            Log.save(f'{word} is {identifier_id}')
-                            identifier_id = identifier_id + 1
-                    lex.append(Lexem('var', word_id))
+                    lex.append(Lexem('var', word, i_line + 1, i_word + 1))
                 else:
-                    raise NameError(f"Error: unknown lexem '{word}'")
+                    raise NameError(f"Error: unknown token '{word}', line {i_line + 1}, token {i_word + 1} ")
     return lex

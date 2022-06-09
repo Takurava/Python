@@ -5,6 +5,6 @@ def int main ( )
     float pi ;
     let pi = 3.14159 ;
     float S ;
-    let S = pi * r * r ;
+    let S = pi / ( r - r ) ;
     print ( S ) ;
 }

@@ -65,7 +65,7 @@ class Tree:
             try:
                 self.leafs[2].run(args=args)
                 self.leafs[3].run()
-            except Exception as e:
+            except NameError as e:
                 result = str(e)
             return result
             '''self.leafs[2].run(args=args)
@@ -85,7 +85,7 @@ class Tree:
                     my_str = s
                     break
             if my_str is None:
-                raise Exception
+                raise Exception(f"unknown identifier {self.me}, line {self.me}, token {self.me}")
             num_str = get_mem(self.memAllock, my_str[2])
             if my_str[1].me == 'int':
                 return int(num_str)
@@ -110,7 +110,7 @@ class Tree:
                         my_str = s
                         break
                 if my_str is None:
-                    raise Exception
+                    raise Exception(f"unknown argument {self.leafs[i].leafs[1].me}, line {self.leafs[i].leafs[1].me}, token {self.leafs[i].leafs[1].me}")
                 self.memAllock.free(my_str[2])
                 identifiers_desc.remove(my_str)
                 addr = self.memAllock.alloc(len(bytes(str(arg), 'utf8')))
@@ -129,7 +129,7 @@ class Tree:
                                 my_str = s
                                 break
                         if my_str is None:
-                            raise Exception
+                            raise Exception(f"unknown identifier {self.leafs[0].me}, line {self.leafs[0].me}, token {self.leafs[0].me}")
 
                         self.memAllock.free(my_str[2])
                         identifiers_desc.remove(my_str)
@@ -166,7 +166,8 @@ class Tree:
                     my_str = s
                     break
             if my_str is None:
-                raise Exception
+                raise Exception(
+                    f"unknown identifier {self.leafs[0].me}, line {self.leafs[0].me}, token {self.leafs[0].me}")
 
             self.memAllock.free(my_str[2])
             identifiers_desc.remove(my_str)
@@ -277,7 +278,11 @@ class Tree:
                 if self.leafs[i*2+1].me == '*':
                     result = result * self.leafs[i*2+2].run()
                 elif self.leafs[i*2+1].me == '/':
-                    result = result / self.leafs[i*2+2].run()
+                    denominator = self.leafs[i*2+2].run()
+                    if denominator == 0:
+                        raise ZeroDivisionError(f"line {self.me}")
+                    else:
+                        result = result / denominator
             return result
         elif gram_name == '<factor>':
             result = None
@@ -289,7 +294,7 @@ class Tree:
                 result = self.leafs[0].run()
             return result
         else:
-            raise NameError(f"Error: unknown gram '{gram_name}'")
+            raise Exception(f"Error: unknown gram '{gram_name}'")
         return True
 
 
@@ -546,7 +551,7 @@ class GramParse:
                 while True:
                     is_find, find_obj = self.try_find(['*'])
                     if not is_find:
-                        is_find, find_obj = self.try_find(['//'])
+                        is_find, find_obj = self.try_find(['/'])
                         if not is_find:
                             break
                     obj.add_leafs(find_obj)
@@ -578,4 +583,4 @@ class GramParse:
             obj.add_leafs(find_obj)
             return True, obj
         else:
-            raise NameError(f"Error: unknown gram '{gram_name}'")
+            raise Exception(f"Error: unknown gram '{gram_name}'")

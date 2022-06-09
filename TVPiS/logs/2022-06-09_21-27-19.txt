@@ -1,0 +1,66 @@
+Try to alloc memory, Loc size = 1
+r is 1
+Try to alloc memory, Loc size = 1
+pi is 2
+Try to alloc memory, Loc size = 1
+S is 3
+(<module>)
+    (<function>)
+        (<type> int)
+        (<identifier> main)
+        (<arguments>)
+        (<block>)
+            (<statement>)
+                (<declaration>)
+                    (<type> float)
+                    (<identifier> 1)
+            (<statement>)
+                (<builtin> scan)
+                    (<identifier> 1)
+            (<statement>)
+                (<declaration>)
+                    (<type> float)
+                    (<identifier> 2)
+            (<statement>)
+                (<assign>)
+                    (<identifier> 2)
+                    (<expression>)
+                        (<term>)
+                            (<factor>)
+                                (<number> 3.14159)
+            (<statement>)
+                (<declaration>)
+                    (<type> float)
+                    (<identifier> 3)
+            (<statement>)
+                (<assign>)
+                    (<identifier> 3)
+                    (<expression>)
+                        (<term>)
+                            (<factor>)
+                                (<identifier> 2)
+                            (<operatoin> *)
+                            (<factor>)
+                                (<identifier> 1)
+                            (<operatoin> *)
+                            (<factor>)
+                                (<identifier> 1)
+            (<statement>)
+                (<builtin> print)
+                    (<expression>)
+                        (<term>)
+                            (<factor>)
+                                (<identifier> 3)
+
+Try to alloc memory, Loc size = 1
+Try to free memory, Address = (Segment - 0, addr - 3)
+Try to alloc memory, Loc size = 1
+Try to alloc memory, Loc size = 1
+Try to free memory, Address = (Segment - 0, addr - 4)
+Try to alloc memory, Loc size = 7
+Try to alloc memory, Loc size = 1
+Try to free memory, Address = (Segment - 0, addr - 11)
+Try to alloc memory, Loc size = 18
+1 float 6
+2 float 3.14159
+3 float 113.09723999999999

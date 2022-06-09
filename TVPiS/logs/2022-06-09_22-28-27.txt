@@ -1,0 +1,6 @@
+Try to alloc memory, Loc size = 1
+r is 1
+Try to alloc memory, Loc size = 1
+pi is 2
+Try to alloc memory, Loc size = 1
+S is 3

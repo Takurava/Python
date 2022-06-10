@@ -63,7 +63,7 @@ class Hash:
                 for mem_block in self.mem_alloc.mem_block_address[addr.segment]:
                     if mem_block.address.segment == addr.segment and mem_block.address.addr == addr.addr:
                         return self.mem_alloc.segments[addr.segment][addr.addr:(addr.addr + mem_block.loc_size)]
-        raise NameError(f"KeyError: key '{key}' not found")
+        raise KeyError(f"key '{key}' not found")
 
     def get_guts(self):
         return str(self.arr)

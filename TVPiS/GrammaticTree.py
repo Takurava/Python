@@ -28,6 +28,9 @@ with open('output.txt', 'w') as write_file:
     pass
 
 identifiers_desc = []
+h = [Hash.Hash(mem_alloc=MemAlloc.MemAlloc(1024))]
+identifier_id = 0
+deep = 0
 
 
 class Tree:
@@ -407,6 +410,13 @@ class GramParse:
             is_find, find_obj = self.try_find(['<type>', '<identifier>'])
             if not is_find:
                 return False, None
+            word = find_obj[1].me
+            try:
+                word_id = "".join(map(chr, h[deep].get(word)))
+                find_obj[1].me = word_id
+            except KeyError as e:
+                raise Exception(
+                    f"unknown identifier {word}, line {self.lex[i_lex + 1].line}, token {self.lex[i_lex + 1].num}")
             return True, Tree('<argument>', leafs=find_obj, memAllock=self.memAllock, i_lex=i_lex, lesems=self.lex)
         elif gram_name == '<builtin>':
             i_lex=self.i_lex
@@ -417,6 +427,14 @@ class GramParse:
                     is_find, find_obj = self.try_find(['exit', '(', '<number>', ')', ';'])
                     if not is_find:
                         return False, None
+            else:
+                word = find_obj[2].me
+                try:
+                    word_id = "".join(map(chr, h[deep].get(word)))
+                    find_obj[2].me = word_id
+                except KeyError as e:
+                    raise Exception(
+                        f"unknown identifier {word}, line {self.lex[i_lex + 2].line}, token {self.lex[i_lex + 2].num}")
             return True, Tree('<builtin>', me=find_obj[1], leafs=[find_obj[2]], memAllock=self.memAllock, i_lex=i_lex, lesems=self.lex)
         elif gram_name == '<block>':
             i_lex=self.i_lex
@@ -457,12 +475,30 @@ class GramParse:
             is_find, find_obj = self.try_find(['<type>', '<identifier>', ';'])
             if not is_find:
                 return False, None
+            word = find_obj[1].me
+            global identifier_id
+            try:
+                h[deep].get(word)
+                raise Exception(f"repeated declaration of identifier {find_obj[1].me}, line {self.lex[i_lex + 1].line}, token {self.lex[i_lex + 1].num}")
+            except KeyError as e:
+                h[deep].update(word, bytes(str(identifier_id), 'utf8'))
+                word_id = str(identifier_id)
+                Log.save(f'{word} is {identifier_id}')
+                identifier_id = identifier_id + 1
+            find_obj[1].me = word_id
             return True, Tree('<declaration>', leafs=find_obj, memAllock=self.memAllock, i_lex=i_lex, lesems=self.lex)
         elif gram_name == '<assign>':
             i_lex=self.i_lex
             is_find, find_obj = self.try_find(['let', '<identifier>', '=', '<expression>', ';'])
             if not is_find:
                 return False, None
+            word = find_obj[0].me
+            try:
+                word_id = "".join(map(chr, h[deep].get(word)))
+                find_obj[0].me = word_id
+            except KeyError as e:
+                raise Exception(
+                        f"unknown identifier {word}, line {self.lex[i_lex + 1].line}, token {self.lex[i_lex + 1].num}")
             return True, Tree('<assign>', leafs=find_obj, memAllock=self.memAllock, i_lex=i_lex, lesems=self.lex)
         elif gram_name == '<ifelse>':
             i_lex=self.i_lex
@@ -496,6 +532,13 @@ class GramParse:
             is_find, find_obj = self.try_find(['call', '<identifier>', '(', '<expressions>', ')'])
             if not is_find:
                 return False, None
+            word = find_obj[0].me
+            try:
+                word_id = "".join(map(chr, h[deep].get(word)))
+                find_obj[0].me = word_id
+            except KeyError as e:
+                raise Exception(
+                    f"unknown identifier {word}, line {self.lex[i_lex + 1].line}, token {self.lex[i_lex + 1].num}")
             return True, Tree('<call>', leafs=find_obj, memAllock=self.memAllock, i_lex=i_lex, lesems=self.lex)
         elif gram_name == '<expressions>':
             obj = Tree('<expressions>', memAllock=self.memAllock, i_lex=self.i_lex, lesems=self.lex)
@@ -620,6 +663,14 @@ class GramParse:
                             is_find, find_obj = self.try_find(['(', '<expression>', ')'])
                             if not is_find:
                                 return False, None
+                    else:
+                        word = find_obj[0].me
+                        try:
+                            word_id = "".join(map(chr, h[deep].get(word)))
+                            find_obj[0].me = word_id
+                        except KeyError as e:
+                            raise Exception(
+                                f"unknown identifier {word}, line {self.lex[find_obj[0].i_lex].line}, token {self.lex[find_obj[0].i_lex].num}")
             obj.add_leafs(find_obj)
             return True, obj
         else:

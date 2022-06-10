@@ -2,12 +2,12 @@ def void main ( )
 {
     num r ;
     str y ;
-    let y = 'done' ;
-    scan ( r ) ;
+    let y = 'one' ;
+    scan ( y ) ;
     num pi ;
     let pi = 3.14159 ;
     num S ;
     let S = r * r ;
     print ( S ) ;
-    print ( y ) ;
+    print ( r ) ;
 }

@@ -42,17 +42,18 @@ class Lexem:
 
 
 
-def create_lexem(memAllock):
+def create_lexem(code_pass='Code\\1.txt'):
     rezerv = {'return': 'return',
               'print': 'print',
-              'float': 'float',
               'while': 'while',
               'break': 'break',
+              'exit': 'exit',
               'scan': 'scan',
               'void': 'void',
               'else': 'else',
               'call': 'call',
-              'int': 'int',
+              'str': 'str',
+              'num': 'num',
               'def': 'def',
               'let': 'let',
               'if': 'if',
@@ -75,12 +76,13 @@ def create_lexem(memAllock):
               '}': '}',
               ';': ';'}
 
-    it = IterationTokenizer('Code\\1.txt')
+    it = IterationTokenizer(code_pass)
     lex = []
 
     import re
     identifier = r'^[a-zA-Z][\w\d]*$'
     number = r'^[\d]+$|^[\d]+\.[\d]+$'
+    string = r'^\'(.*)\'$'
 
     for i_line, line in enumerate(it):
         for i_word, word in enumerate(line):
@@ -91,6 +93,8 @@ def create_lexem(memAllock):
                     lex.append(Lexem('num', word, i_line + 1, i_word + 1))
                 elif re.match(identifier, word) is not None:
                     lex.append(Lexem('var', word, i_line + 1, i_word + 1))
+                elif re.match(string, word) is not None:
+                    lex.append(Lexem('str', word.replace("'", ""), i_line + 1, i_word + 1))
                 else:
                     raise NameError(f"Error: unknown token '{word}', line {i_line + 1}, token {i_word + 1} ")
     return lex

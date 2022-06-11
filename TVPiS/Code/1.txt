@@ -1,13 +1,90 @@
 def void main ( )
 {
-    num r ;
-    str y ;
-    let y = 'one' ;
-    scan ( y ) ;
-    num pi ;
-    let pi = 3.14159 ;
-    num S ;
-    let S = r * r ;
-    print ( S ) ;
-    print ( r ) ;
+    num result ;
+    let result = 0 ;
+    num new ;
+    let new = - 1 ;
+    num old ;
+    let old = - 1 ;
+
+    while
+    {
+        str R ;
+        let R = '_' ;
+        scan ( R ) ;
+        if ( R == '.' )
+        {
+            break ;
+        }
+        else
+        {
+            let old = new ;
+            if ( R == 'M' )
+            {
+                let new = 1000 ;
+            }
+            else
+            {
+                if ( R == 'D' )
+                {
+                    let new = 500 ;
+                }
+                else
+                {
+                    if ( R == 'C' )
+                    {
+                        let new = 100 ;
+                    }
+                    else
+                    {
+                        if ( R == 'L' )
+                        {
+                            let new = 50 ;
+                        }
+                        else
+                        {
+                            if ( R == 'X' )
+                            {
+                                let new = 10 ;
+                            }
+                            else
+                            {
+                                if ( R == 'V' )
+                                {
+                                    let new = 5 ;
+                                }
+                                else
+                                {
+                                    if ( R == 'I' )
+                                    {
+                                        let new = 1 ;
+                                    }
+                                    else
+                                    {
+                                        exit ( 1 ) ;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if ( old == - 1 )
+            {
+                let result = result + new ;
+            }
+            else
+            {
+                if ( old < new )
+                {
+                    let result = result + new - 2 * old ;
+                }
+                else
+                {
+                    let result = result + new ;
+                }
+            }
+        }
+    }
+    print ( result ) ;
 }

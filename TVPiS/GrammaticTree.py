@@ -4,6 +4,7 @@ import Hash
 import Stack
 import Log
 from functools import reduce
+import codecs
 
 
 def fill_mem(mem_alloc, address, string):
@@ -16,21 +17,25 @@ def fill_mem(mem_alloc, address, string):
 def get_mem(mem_alloc, address):
     for mem_block in mem_alloc.mem_block_address[address.segment]:
         if mem_block.address.segment == address.segment and mem_block.address.addr == address.addr:
-            return "".join(map(chr, mem_alloc.segments[address.segment][address.addr:(address.addr + mem_block.loc_size)]))
+            try:
+                return "".join(map(chr, mem_alloc.segments[address.segment][address.addr:(address.addr + mem_block.loc_size)]))
+            except Exception as e:
+                return '-1'
 
 
-scan_queue = Stack.Stack(mem_alloc=MemAlloc.MemAlloc(1024))
+scan_queue = Stack.Deque(mem_alloc=MemAlloc.MemAlloc(1024))
 with open('input.txt', 'r') as read_file:
     for line in read_file:
         for word in line.split():
-            scan_queue.push(bytes(str(word), 'utf8'))
+            scan_queue.push_back(bytes(str(word), 'utf8'))
 with open('output.txt', 'w') as write_file:
     pass
 
 identifiers_desc = []
-h = [Hash.Hash(mem_alloc=MemAlloc.MemAlloc(1024))]
+h = [(0, Hash.Hash(mem_alloc=MemAlloc.MemAlloc(1024)))]
 identifier_id = 0
 deep = 0
+local_deep = 0
 
 
 class Tree:
@@ -62,6 +67,7 @@ class Tree:
         self.leafs.extend(leafs)
 
     def run(self, func_name=None, args=None):
+        global deep
         gram_name = self.lex
         if gram_name == '<module>':
             result = None
@@ -123,13 +129,13 @@ class Tree:
                 self.memAllock.free(my_str[2])
                 identifiers_desc.remove(my_str)
                 addr = self.memAllock.alloc(len(bytes(str(arg), 'utf8')))
-                identifiers_desc.append((my_str[0], my_str[1], addr))
+                identifiers_desc.append((my_str[0], my_str[1], addr, my_str[3]))
                 fill_mem(self.memAllock, addr, str(arg))
         elif gram_name == '<argument>':
             identifiers_desc.append((self.leafs[1].me, self.leafs[0], self.memAllock.alloc(1)))
         elif gram_name == '<builtin>':
             if self.me == 'scan':
-                result = "".join(map(chr, scan_queue.pop()))
+                result = "".join(map(chr, scan_queue.pop_front()))
                 my_str = None
                 for s in identifiers_desc:
                     if s[0] == self.leafs[0].me:
@@ -141,7 +147,7 @@ class Tree:
                 self.memAllock.free(my_str[2])
                 identifiers_desc.remove(my_str)
                 addr = self.memAllock.alloc(len(bytes(str(result), 'utf8')))
-                identifiers_desc.append((my_str[0], my_str[1], addr))
+                identifiers_desc.append((my_str[0], my_str[1], addr, my_str[3]))
                 fill_mem(self.memAllock, addr, str(result))
 
             elif self.me == 'print':
@@ -166,7 +172,7 @@ class Tree:
             for leaf in self.leafs:
                 leaf.run()
         elif gram_name == '<declaration>':
-            identifiers_desc.append((self.leafs[1].me, self.leafs[0], self.memAllock.alloc(1)))
+            identifiers_desc.append((self.leafs[1].me, self.leafs[0], self.memAllock.alloc(1), deep))
         elif gram_name == '<assign>':
             result = self.leafs[1].run()
             my_str = None
@@ -181,10 +187,37 @@ class Tree:
             self.memAllock.free(my_str[2])
             identifiers_desc.remove(my_str)
             addr = self.memAllock.alloc(len(bytes(str(result), 'utf8')))
-            identifiers_desc.append((my_str[0], my_str[1], addr))
+            identifiers_desc.append((my_str[0], my_str[1], addr, my_str[3]))
             fill_mem(self.memAllock, addr, str(result))
         elif gram_name == '<ifelse>':
-            pass
+            if self.leafs[0].run() > 0:
+                last_deep = deep
+                deep = self.me
+                self.leafs[1].run()
+                while True:
+                    el = None
+                    for e in identifiers_desc:
+                        if e[3] == deep:
+                            el = e
+                            break
+                    if el is None:
+                        break
+                    identifiers_desc.remove(el)
+                deep = last_deep
+            else:
+                last_deep = deep
+                deep = self.leafs[2].me
+                self.leafs[2].run()
+                while True:
+                    el = None
+                    for e in identifiers_desc:
+                        if e[3] == deep:
+                            el = e
+                            break
+                    if el is None:
+                        break
+                    identifiers_desc.remove(el)
+                deep = last_deep
             '''is_find, find_obj = self.try_find(['if', '(', '<condition>', ')', '<block>'])
             if not is_find:
                 return False, None
@@ -197,13 +230,32 @@ class Tree:
                     obj.add_leafs(find_obj)
                     return True, obj'''
         elif gram_name == '<while>':
-            pass
-            '''is_find, find_obj = self.try_find(['while', '(', '<condition>', ')', '<block>'])
+            while True:
+                try:
+                    last_deep = deep
+                    deep = self.me
+                    self.leafs[0].run()
+                    while True:
+                        el = None
+                        for e in identifiers_desc:
+                            if e[3] == self.me:
+                                el = e
+                                break
+                        if el is None:
+                            break
+                        identifiers_desc.remove(el)
+                    deep = last_deep
+                except NameError as e:
+                    break
+            '''is_find, find_obj = self.try_find(['while', '<block>'])
             if not is_find:
                 return False, None
             return True, Tree('<while>', leafs=find_obj)'''
         elif gram_name == '<jump>':
-            raise NameError(str(self.leafs[0].run()))
+            if len(self.leafs) > 0:
+                raise NameError(str(self.leafs[0].run()))
+            else:
+                raise NameError(None)
         elif gram_name == '<call>':
             pass
             '''is_find, find_obj = self.try_find(['call', '<identifier>', '(', '<expressions>', ')'])
@@ -226,53 +278,39 @@ class Tree:
                         obj.add_leafs(find_obj)
                 return True, obj'''
         elif gram_name == '<condition>':
-            pass
-            '''is_find, find_obj = self.try_find(['<comparison>'])
-            if not is_find:
-                return False, None
+            result = self.leafs[0].run()
+            for i in range(int(len(self.leafs) / 2)):
+                if self.leafs[i * 2 + 1].me == '&&':
+                    result = result * self.leafs[i * 2 + 2].run()
+                elif self.leafs[i * 2 + 1].me == '||':
+                    result = result + self.leafs[i * 2 + 2].run()
+            if result >= 1:
+                return 1
             else:
-                obj = Tree('<condition>', leafs=find_obj)
-                while True:
-                    is_find, find_obj = self.try_find(['&&'])
-                    if not is_find:
-                        is_find, find_obj = self.try_find(['||'])
-                        if not is_find:
-                            break
-                    obj.add_leafs(find_obj)
-                    is_find, find_obj = self.try_find(['<comparison>'])
-                    if not is_find:
-                        return False, None
-                    else:
-                        obj.add_leafs(find_obj)
-                return True, obj'''
+                return 0
         elif gram_name == '<comparison>':
-            pass
-            '''is_find, find_obj = self.try_find(['<expression>'])
-            if not is_find:
-                return False, None
+            result = self.leafs[0].run()
+
+            if len(self.leafs) > 1:
+                result2 = self.leafs[2].run()
+                operation = self.leafs[1].me
+                if operation == '==':
+                    return result == result2
+                elif operation == '!=':
+                    return result != result2
+                elif operation == '>':
+                    return result > result2
+                elif operation == '>=':
+                    return result >= result2
+                elif operation == '<':
+                    return result < result2
+                elif operation == '<=':
+                    return result <= result2
+
+            if result >= 1:
+                return 1
             else:
-                obj = Tree('<comparison>', leafs=find_obj)
-                while True:
-                    is_find, find_obj = self.try_find(['=='])
-                    if not is_find:
-                        is_find, find_obj = self.try_find(['!='])
-                        if not is_find:
-                            is_find, find_obj = self.try_find(['>'])
-                            if not is_find:
-                                is_find, find_obj = self.try_find(['>='])
-                                if not is_find:
-                                    is_find, find_obj = self.try_find(['<'])
-                                    if not is_find:
-                                        is_find, find_obj = self.try_find(['<='])
-                                        if not is_find:
-                                            break
-                    obj.add_leafs(find_obj)
-                    is_find, find_obj = self.try_find(['<expression>'])
-                    if not is_find:
-                        return False, None
-                    else:
-                        obj.add_leafs(find_obj)
-                return True, obj'''
+                return 0
         elif gram_name == '<expression>':
             result = self.leafs[0].run()
             for i in range(int(len(self.leafs)/2)):
@@ -347,6 +385,8 @@ class GramParse:
         return True, result_lex
 
     def find_gram(self, gram_name, ):
+        global deep
+        global local_deep
         if gram_name == '<module>':
             obj = Tree('<module>', memAllock=self.memAllock, i_lex=self.i_lex, lesems=self.lex)
             while True:
@@ -355,6 +395,7 @@ class GramParse:
                     break
                 else:
                     obj.add_leafs(find_obj)
+            deep = 0
             return True, obj
         elif gram_name == '<function>':
             i_lex = self.i_lex
@@ -429,10 +470,18 @@ class GramParse:
                         return False, None
             else:
                 word = find_obj[2].me
-                try:
-                    word_id = "".join(map(chr, h[deep].get(word)))
-                    find_obj[2].me = word_id
-                except KeyError as e:
+                word_id = None
+                lc_deep = local_deep
+                for i_h in range(deep, -1, -1):
+                    hash = h[i_h]
+                    if hash[0] <= lc_deep:
+                        try:
+                            word_id = "".join(map(chr, hash[1].get(word)))
+                            find_obj[2].me = word_id
+                            break
+                        except KeyError as e:
+                            lc_deep = lc_deep - 1
+                if word_id is None:
                     raise Exception(
                         f"unknown identifier {word}, line {self.lex[i_lex + 2].line}, token {self.lex[i_lex + 2].num}")
             return True, Tree('<builtin>', me=find_obj[1], leafs=[find_obj[2]], memAllock=self.memAllock, i_lex=i_lex, lesems=self.lex)
@@ -478,10 +527,10 @@ class GramParse:
             word = find_obj[1].me
             global identifier_id
             try:
-                h[deep].get(word)
+                h[deep][1].get(word)
                 raise Exception(f"repeated declaration of identifier {find_obj[1].me}, line {self.lex[i_lex + 1].line}, token {self.lex[i_lex + 1].num}")
             except KeyError as e:
-                h[deep].update(word, bytes(str(identifier_id), 'utf8'))
+                h[deep][1].update(word, bytes(str(identifier_id), 'utf8'))
                 word_id = str(identifier_id)
                 Log.save(f'{word} is {identifier_id}')
                 identifier_id = identifier_id + 1
@@ -493,32 +542,66 @@ class GramParse:
             if not is_find:
                 return False, None
             word = find_obj[0].me
-            try:
-                word_id = "".join(map(chr, h[deep].get(word)))
-                find_obj[0].me = word_id
-            except KeyError as e:
+            word_id = None
+            lc_deep = local_deep
+            for i_h in range(deep, -1, -1):
+                hash = h[i_h]
+                if hash[0] <= lc_deep:
+                    try:
+                        word_id = "".join(map(chr, hash[1].get(word)))
+                        find_obj[0].me = word_id
+                        break
+                    except KeyError as e:
+                        lc_deep = lc_deep - 1
+            if word_id is None:
                 raise Exception(
                         f"unknown identifier {word}, line {self.lex[i_lex + 1].line}, token {self.lex[i_lex + 1].num}")
             return True, Tree('<assign>', leafs=find_obj, memAllock=self.memAllock, i_lex=i_lex, lesems=self.lex)
         elif gram_name == '<ifelse>':
             i_lex=self.i_lex
+            local_deep = local_deep + 1
+            deep = deep + 1
+            ll_deep = deep
+            h.append((local_deep, Hash.Hash(mem_alloc=MemAlloc.MemAlloc(1024))))
             is_find, find_obj = self.try_find(['if', '(', '<condition>', ')', '<block>'])
             if not is_find:
+                h.pop(len(h)-1)
+                deep = deep - 1
+                local_deep = local_deep - 1
                 return False, None
             else:
-                obj = Tree('<ifelse>', leafs=find_obj, memAllock=self.memAllock, i_lex=i_lex, lesems=self.lex)
+                local_deep = local_deep - 1
+
+                local_deep = local_deep + 1
+                deep = deep + 1
+                ll_deep = deep
+                h.append((local_deep, Hash.Hash(mem_alloc=MemAlloc.MemAlloc(1024))))
+                obj = Tree('<ifelse>', leafs=find_obj, me=ll_deep, memAllock=self.memAllock, i_lex=i_lex, lesems=self.lex)
                 is_find, find_obj = self.try_find(['else', '<block>'])
                 if not is_find:
+                    h.pop(len(h) - 1)
+                    deep = deep - 1
+                    local_deep = local_deep - 1
                     return True, obj
                 else:
+                    find_obj[0].me = deep
+                    local_deep = local_deep - 1
                     obj.add_leafs(find_obj)
                     return True, obj
         elif gram_name == '<while>':
             i_lex=self.i_lex
-            is_find, find_obj = self.try_find(['while', '(', '<condition>', ')', '<block>'])
+            local_deep = local_deep + 1
+            deep = deep + 1
+            ll_deep = deep
+            h.append((local_deep, Hash.Hash(mem_alloc=MemAlloc.MemAlloc(1024))))
+            is_find, find_obj = self.try_find(['while', '<block>'])
             if not is_find:
+                deep = deep - 1
+                local_deep = local_deep - 1
+                h.pop(len(h)-1)
                 return False, None
-            return True, Tree('<while>', leafs=find_obj, memAllock=self.memAllock, i_lex=i_lex, lesems=self.lex)
+            local_deep = local_deep - 1
+            return True, Tree('<while>', me=ll_deep, leafs=find_obj, memAllock=self.memAllock, i_lex=i_lex, lesems=self.lex)
         elif gram_name == '<jump>':
             i_lex=self.i_lex
             is_find, find_obj = self.try_find(['return', '<expression>', ';'])
@@ -581,26 +664,25 @@ class GramParse:
                 return False, None
             else:
                 obj = Tree('<comparison>', leafs=find_obj, memAllock=self.memAllock, i_lex=i_lex, lesems=self.lex)
-                while True:
-                    is_find, find_obj = self.try_find(['=='])
+                is_find, find_obj = self.try_find(['=='])
+                if not is_find:
+                    is_find, find_obj = self.try_find(['!='])
                     if not is_find:
-                        is_find, find_obj = self.try_find(['!='])
+                        is_find, find_obj = self.try_find(['>'])
                         if not is_find:
-                            is_find, find_obj = self.try_find(['>'])
+                            is_find, find_obj = self.try_find(['>='])
                             if not is_find:
-                                is_find, find_obj = self.try_find(['>='])
+                                is_find, find_obj = self.try_find(['<'])
                                 if not is_find:
-                                    is_find, find_obj = self.try_find(['<'])
+                                    is_find, find_obj = self.try_find(['<='])
                                     if not is_find:
-                                        is_find, find_obj = self.try_find(['<='])
-                                        if not is_find:
-                                            break
+                                        return True, obj
+                obj.add_leafs(find_obj)
+                is_find, find_obj = self.try_find(['<expression>'])
+                if not is_find:
+                    return False, None
+                else:
                     obj.add_leafs(find_obj)
-                    is_find, find_obj = self.try_find(['<expression>'])
-                    if not is_find:
-                        return False, None
-                    else:
-                        obj.add_leafs(find_obj)
                 return True, obj
         elif gram_name == '<expression>':
             i_lex=self.i_lex
@@ -665,10 +747,18 @@ class GramParse:
                                 return False, None
                     else:
                         word = find_obj[0].me
-                        try:
-                            word_id = "".join(map(chr, h[deep].get(word)))
-                            find_obj[0].me = word_id
-                        except KeyError as e:
+                        word_id = None
+                        lc_deep = local_deep
+                        for i_h in range(deep, -1, -1):
+                            hash = h[i_h]
+                            if hash[0] <= lc_deep:
+                                try:
+                                    word_id = "".join(map(chr, hash[1].get(word)))
+                                    find_obj[0].me = word_id
+                                    break
+                                except KeyError as e:
+                                    lc_deep = lc_deep - 1
+                        if word_id is None:
                             raise Exception(
                                 f"unknown identifier {word}, line {self.lex[find_obj[0].i_lex].line}, token {self.lex[find_obj[0].i_lex].num}")
             obj.add_leafs(find_obj)
